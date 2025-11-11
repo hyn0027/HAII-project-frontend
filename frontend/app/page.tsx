@@ -1,53 +1,83 @@
-'use client';
-import { useState } from 'react';
-import axios from 'axios';
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { KeywordHighlight } from "@/components/ui/keyword-highlight";
 
 export default function Home() {
-  const [passage, setPassage] = useState('');
-  const [summary, setSummary] = useState('');
+  type Keyword = Record<string, string>;
+  type KeywordList = Keyword[];
+  type Keywords = KeywordList[];
+
+  const [passage, setPassage] = useState("");
+  const [keywords, setKeywords] = useState<Keywords>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSummary('');
+    setError("");
+    setKeywords([]);
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/summarize/', { passage });
-      setSummary(res.data.summary);
+      const res = await axios.post("http://127.0.0.1:8000/api/get_keywords/", {
+        passage,
+      });
+      setKeywords(res.data.keywords_with_expanations);
     } catch (err) {
-      setError('Something went wrong.');
+      setError("An error occurred while fetching keyword explanations.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="p-10 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Text Summarizer</h1>
+    <main className="p-6 sm:p-10 w-full max-w-7xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">
+        Technical Article Reading Helper
+      </h1>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <textarea
+        <Textarea
           value={passage}
           onChange={(e) => setPassage(e.target.value)}
           placeholder="Enter your passage here..."
-          className="border border-gray-300 rounded-lg p-4 min-h-[150px] text-gray-800"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Summarizing...' : 'Summarize'}
-        </button>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Processing..." : "Get Keyword Explanations"}
+        </Button>
       </form>
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
-      {summary && (
-        <div className="mt-6 p-4 border rounded-lg bg-gray-50">
-          <h2 className="text-xl font-semibold mb-2">Summary:</h2>
-          <p>{summary}</p>
+
+      {keywords.length > 0 && (
+        <div className="mt-8 p-4 border rounded-lg bg-gray-50 leading-relaxed">
+          <h2 className="text-xl font-semibold mb-3 text-gray-900">
+            Passage with Keyword Explanations:
+          </h2>
+          <div className="space-y-4">
+            {keywords.map((paragraph, pIdx) => (
+              <div
+                key={pIdx}
+                className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words text-justify"
+              >
+                {paragraph.map(
+                  (wordObj: Record<string, string>, wIdx: number) => {
+                    const space = wIdx === paragraph.length - 1 ? "" : " ";
+                    return (
+                      <span key={wIdx}>
+                        <KeywordHighlight wordObj={wordObj} />
+                        {space}
+                      </span>
+                    );
+                  },
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </main>
