@@ -5,7 +5,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 export function KeywordHighlight({
   wordObj,
@@ -18,19 +17,12 @@ export function KeywordHighlight({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span
-            className={cn(
-              "bg-yellow-200 px-1 cursor-pointer rounded hover:bg-yellow-300 transition-colors ",
-            )}
-          >
+          <span className="inline-block bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded cursor-pointer transition-colors text-primary font-medium">
             {wordObj.word}
           </span>
         </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          className="max-w-xs text-sm bg-gray-800 text-white px-3 py-2 rounded shadow-md"
-        >
-          {wordObj.explanation}
+        <TooltipContent side="top" className="max-w-xs">
+          <p className="text-sm">{wordObj.explanation}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
