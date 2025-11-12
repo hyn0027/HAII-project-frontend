@@ -17,7 +17,7 @@ export function KeywordHighlight({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-block bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded cursor-pointer transition-colors text-primary font-medium">
+          <span className="inline bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded cursor-pointer transition-colors text-primary font-medium">
             {wordObj.word}
           </span>
         </TooltipTrigger>

@@ -52,7 +52,7 @@ export default function Home() {
 
     try {
       const res = await axios.post(API_ENDPOINT, { passage });
-      setKeywords(res.data.keywords_with_expanations);
+      setKeywords(res.data.keywords_with_explanations);
     } catch (err) {
       setError(
         "Failed to fetch keyword explanations. Please check if the backend server is running.",
@@ -85,7 +85,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
+      <main className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
         {/* Input Section */}
         <Card>
           <CardHeader>
@@ -100,7 +100,7 @@ export default function Home() {
                 value={passage}
                 onChange={(e) => setPassage(e.target.value)}
                 placeholder="Paste your technical article here. We will help you identify and explain complex terms and concepts..."
-                className="min-h-[200px]"
+                className="min-h-[200px] text-justify"
               />
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">{passage.length} characters</Badge>
@@ -170,13 +170,25 @@ export default function Home() {
               <div className="space-y-4">
                 {keywords.map((paragraph, pIdx) => (
                   <Card key={pIdx} className="p-4">
-                    <div className="leading-relaxed whitespace-pre-wrap break-words">
-                      {paragraph.map((wordObj, wIdx) => (
-                        <span key={wIdx}>
-                          <KeywordHighlight wordObj={wordObj} />
-                          {wIdx < paragraph.length - 1 && " "}
-                        </span>
-                      ))}
+                    <div className="leading-relaxed whitespace-pre-wrap break-words text-justify">
+                      {paragraph.map((wordObj, wIdx) => {
+                        const currentWord = wordObj.word;
+                        const nextWord =
+                          wIdx < paragraph.length - 1
+                            ? paragraph[wIdx + 1].word
+                            : "";
+                        const shouldAddSpace =
+                          wIdx < paragraph.length - 1 &&
+                          !/[(\[{]$/.test(currentWord) &&
+                          !/^[.,;:!?)\]}]/.test(nextWord);
+
+                        return (
+                          <span key={wIdx}>
+                            <KeywordHighlight wordObj={wordObj} />
+                            {shouldAddSpace && " "}
+                          </span>
+                        );
+                      })}
                     </div>
                   </Card>
                 ))}
