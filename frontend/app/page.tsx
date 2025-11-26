@@ -28,27 +28,81 @@ import {
 	Moon,
 	AlertCircle,
 } from 'lucide-react';
-import { API_ENDPOINT_GET_KEYWORD, TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
+import {
+	API_ENDPOINT_GET_KEYWORD,
+	API_ENDPOINT_NEW_KEYWORD,
+	TIP_STORAGE_KEY,
+	type Keywords,
+} from '@/lib/constants';
 
-function KeywordHighlight({ wordObj }: { wordObj: Record<string, string> }) {
-	if (!wordObj.explanation) return <>{wordObj.word}</>;
+function KeywordHighlight({
+	wordObj,
+	loadingWord,
+	onWordClick,
+}: {
+	wordObj: Record<string, string>;
+	loadingWord: string | null;
+	onWordClick: (word: string) => void;
+}) {
+	const isLoading = loadingWord === wordObj.word;
+	const hasExplanation = !!wordObj.explanation;
+	const isClickable = !hasExplanation && !loadingWord;
 
+	// Words with explanations - show tooltip, not clickable
+	if (hasExplanation) {
+		return (
+			<Tooltip label={wordObj.explanation} position="top" withArrow>
+				<Text
+					component="span"
+					style={{
+						backgroundColor: '#dbeafe',
+						color: '#1e40af',
+						padding: '2px 4px',
+						borderRadius: '4px',
+						fontWeight: 500,
+					}}
+				>
+					{wordObj.word}
+				</Text>
+			</Tooltip>
+		);
+	}
+
+	// Words without explanations - clickable or loading
 	return (
-		<Tooltip label={wordObj.explanation} position="top" withArrow>
-			<Text
-				component="span"
-				style={{
-					backgroundColor: '#dbeafe',
-					color: '#1e40af',
-					padding: '2px 4px',
-					borderRadius: '4px',
-					cursor: 'pointer',
-					fontWeight: 500,
-				}}
-			>
-				{wordObj.word}
-			</Text>
-		</Tooltip>
+		<Text
+			component="span"
+			style={{
+				backgroundColor: isLoading
+					? '#fef3c7'
+					: isClickable
+						? '#f3f4f6'
+						: 'transparent',
+				color: isLoading
+					? '#92400e'
+					: isClickable
+						? '#374151'
+						: 'inherit',
+				padding: isClickable || isLoading ? '2px 4px' : '0',
+				borderRadius: isClickable || isLoading ? '4px' : '0',
+				cursor: isClickable ? 'pointer' : 'default',
+				fontWeight: isClickable || isLoading ? 500 : 'normal',
+				border: isClickable ? '1px dashed #9ca3af' : 'none',
+				position: 'relative',
+			}}
+			onClick={isClickable ? () => onWordClick(wordObj.word) : undefined}
+		>
+			{isLoading ? (
+				<>
+					{wordObj.word}
+					<span style={{ marginLeft: '4px', fontSize: '10px' }}>
+						⏳
+					</span>
+				</>
+			) : (
+				wordObj.word
+			)}
+		</Text>
 	);
 }
 
@@ -70,7 +124,11 @@ function ThemeToggle() {
 const ClientOnlyThemeToggle = dynamic(() => Promise.resolve(ThemeToggle), {
 	ssr: false,
 	loading: () => (
-		<ActionIcon variant="subtle" size="lg" aria-label="Loading theme toggle">
+		<ActionIcon
+			variant="subtle"
+			size="lg"
+			aria-label="Loading theme toggle"
+		>
 			<div style={{ width: 18, height: 18, opacity: 0.5 }} />
 		</ActionIcon>
 	),
@@ -80,6 +138,7 @@ export default function Home() {
 	const [passage, setPassage] = useState('');
 	const [keywords, setKeywords] = useState<Keywords>([]);
 	const [loading, setLoading] = useState(false);
+	const [loadingWord, setLoadingWord] = useState<string | null>(null);
 	const [error, setError] = useState('');
 	const [showTip, setShowTip] = useState(true);
 
@@ -96,6 +155,26 @@ export default function Home() {
 	const handleShowTip = () => {
 		setShowTip(true);
 		localStorage.removeItem(TIP_STORAGE_KEY);
+	};
+
+	const handleWordClick = async (word: string) => {
+		setLoadingWord(word);
+		setError('');
+
+		try {
+			const res = await axios.post(API_ENDPOINT_NEW_KEYWORD, {
+				keywords_with_explanations: keywords,
+				requested_word: word,
+			});
+			setKeywords(res.data.keywords_with_explanations);
+		} catch (err) {
+			setError(
+				'Failed to fetch explanation for the selected word. Please try again.'
+			);
+			console.error(err);
+		} finally {
+			setLoadingWord(null);
+		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -245,8 +324,9 @@ export default function Home() {
 										withCloseButton
 										onClose={handleDismissTip}
 									>
-										Hover over highlighted terms to see
-										their explanations.
+										Hover over blue highlighted terms to see
+										explanations. Click on dashed outlined
+										terms to get new explanations.
 									</Alert>
 								)}
 
@@ -290,6 +370,12 @@ export default function Home() {
 																<KeywordHighlight
 																	wordObj={
 																		wordObj
+																	}
+																	loadingWord={
+																		loadingWord
+																	}
+																	onWordClick={
+																		handleWordClick
 																	}
 																/>
 																{shouldAddSpace &&
