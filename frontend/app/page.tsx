@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import axios from 'axios';
 import {
 	Container,
@@ -27,9 +28,8 @@ import {
 	Moon,
 	AlertCircle,
 } from 'lucide-react';
-import { API_ENDPOINT, TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
+import { API_ENDPOINT_GET_KEYWORD, TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
 
-// Custom KeywordHighlight component using Mantine
 function KeywordHighlight({ wordObj }: { wordObj: Record<string, string> }) {
 	if (!wordObj.explanation) return <>{wordObj.word}</>;
 
@@ -52,7 +52,6 @@ function KeywordHighlight({ wordObj }: { wordObj: Record<string, string> }) {
 	);
 }
 
-// Theme toggle component
 function ThemeToggle() {
 	const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
@@ -68,6 +67,15 @@ function ThemeToggle() {
 	);
 }
 
+const ClientOnlyThemeToggle = dynamic(() => Promise.resolve(ThemeToggle), {
+	ssr: false,
+	loading: () => (
+		<ActionIcon variant="subtle" size="lg" aria-label="Loading theme toggle">
+			<div style={{ width: 18, height: 18, opacity: 0.5 }} />
+		</ActionIcon>
+	),
+});
+
 export default function Home() {
 	const [passage, setPassage] = useState('');
 	const [keywords, setKeywords] = useState<Keywords>([]);
@@ -75,7 +83,6 @@ export default function Home() {
 	const [error, setError] = useState('');
 	const [showTip, setShowTip] = useState(true);
 
-	// Load tip visibility from localStorage
 	useEffect(() => {
 		const tipDismissed = localStorage.getItem(TIP_STORAGE_KEY);
 		setShowTip(tipDismissed !== 'true');
@@ -100,7 +107,7 @@ export default function Home() {
 		setKeywords([]);
 
 		try {
-			const res = await axios.post(API_ENDPOINT, { passage });
+			const res = await axios.post(API_ENDPOINT_GET_KEYWORD, { passage });
 			setKeywords(res.data.keywords_with_explanations);
 		} catch (err) {
 			setError(
@@ -142,7 +149,7 @@ export default function Home() {
 								</Text>
 							</div>
 						</Group>
-						<ThemeToggle />
+						<ClientOnlyThemeToggle />
 					</Flex>
 				</Container>
 			</Box>
