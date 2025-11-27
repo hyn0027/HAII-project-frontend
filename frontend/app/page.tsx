@@ -20,14 +20,7 @@ import {
 	Box,
 	useMantineColorScheme,
 } from '@mantine/core';
-import {
-	BookOpen,
-	Sparkles,
-	Lightbulb,
-	Sun,
-	Moon,
-	AlertCircle,
-} from 'lucide-react';
+import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle } from 'lucide-react';
 import {
 	API_ENDPOINT_GET_KEYWORD,
 	API_ENDPOINT_NEW_KEYWORD,
@@ -48,18 +41,15 @@ function KeywordHighlight({
 	const hasExplanation = !!wordObj.explanation;
 	const isClickable = !hasExplanation && !loadingWord;
 
-	// Words with explanations - show tooltip, not clickable
+	// Words with explanations: show tooltip, not clickable
 	if (hasExplanation) {
 		return (
 			<Tooltip label={wordObj.explanation} position="top" withArrow>
 				<Text
 					component="span"
 					style={{
-						backgroundColor: '#dbeafe',
-						color: '#1e40af',
-						padding: '2px 4px',
-						borderRadius: '4px',
-						fontWeight: 500,
+						cursor: 'help',
+						textDecoration: 'underline',
 					}}
 				>
 					{wordObj.word}
@@ -68,40 +58,18 @@ function KeywordHighlight({
 		);
 	}
 
-	// Words without explanations - clickable or loading
+	// Words without explanations: clickable or loading
 	return (
 		<Text
 			component="span"
 			style={{
-				backgroundColor: isLoading
-					? '#fef3c7'
-					: isClickable
-						? '#f3f4f6'
-						: 'transparent',
-				color: isLoading
-					? '#92400e'
-					: isClickable
-						? '#374151'
-						: 'inherit',
-				padding: isClickable || isLoading ? '2px 4px' : '0',
-				borderRadius: isClickable || isLoading ? '4px' : '0',
+				backgroundColor: isLoading ? '#fef3c7' : 'inherit',
+				color: isLoading ? '#92400e' : 'inherit',
 				cursor: isClickable ? 'pointer' : 'default',
-				fontWeight: isClickable || isLoading ? 500 : 'normal',
-				border: isClickable ? '1px dashed #9ca3af' : 'none',
-				position: 'relative',
 			}}
 			onClick={isClickable ? () => onWordClick(wordObj.word) : undefined}
 		>
-			{isLoading ? (
-				<>
-					{wordObj.word}
-					<span style={{ marginLeft: '4px', fontSize: '10px' }}>
-						⏳
-					</span>
-				</>
-			) : (
-				wordObj.word
-			)}
+			{wordObj.word}
 		</Text>
 	);
 }
@@ -110,12 +78,7 @@ function ThemeToggle() {
 	const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
 	return (
-		<ActionIcon
-			onClick={toggleColorScheme}
-			variant="subtle"
-			size="lg"
-			aria-label="Toggle color scheme"
-		>
+		<ActionIcon onClick={toggleColorScheme} variant="subtle" aria-label="Toggle color scheme">
 			{colorScheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
 		</ActionIcon>
 	);
@@ -124,11 +87,7 @@ function ThemeToggle() {
 const ClientOnlyThemeToggle = dynamic(() => Promise.resolve(ThemeToggle), {
 	ssr: false,
 	loading: () => (
-		<ActionIcon
-			variant="subtle"
-			size="lg"
-			aria-label="Loading theme toggle"
-		>
+		<ActionIcon variant="subtle" aria-label="Loading theme toggle">
 			<div style={{ width: 18, height: 18, opacity: 0.5 }} />
 		</ActionIcon>
 	),
@@ -168,9 +127,7 @@ export default function Home() {
 			});
 			setKeywords(res.data.keywords_with_explanations);
 		} catch (err) {
-			setError(
-				'Failed to fetch explanation for the selected word. Please try again.'
-			);
+			setError('Failed to fetch explanation for the selected word. Please try again.');
 			console.error(err);
 		} finally {
 			setLoadingWord(null);
@@ -215,6 +172,7 @@ export default function Home() {
 									padding: '8px',
 									backgroundColor: '#dbeafe',
 									borderRadius: '8px',
+									display: 'flex',
 								}}
 							>
 								<BookOpen size={24} color="#3b82f6" />
@@ -239,38 +197,28 @@ export default function Home() {
 					<Card shadow="sm" padding="lg">
 						<Stack gap="md">
 							<Group gap="sm">
-								<Sparkles size={20} />
-								<Title order={3}>Enter Your Article</Title>
+								<Newspaper size={20} />
+								<Title order={3}>Enter an article to read!</Title>
 							</Group>
 							<form onSubmit={handleSubmit}>
 								<Stack gap="md">
 									<Textarea
 										value={passage}
-										onChange={e =>
-											setPassage(e.target.value)
-										}
-										placeholder="Paste your technical article here. We will help you identify and explain complex terms and concepts..."
+										onChange={e => setPassage(e.target.value)}
+										placeholder="Paste your article here. We will help you identify and explain complex terms and concepts..."
 										minRows={8}
 										autosize
 									/>
-									<Flex
-										justify="space-between"
-										align="center"
-									>
+									<Flex justify="space-between" align="center">
 										<Badge variant="light" color="gray">
 											{passage.length} characters
 										</Badge>
 										<Button
 											type="submit"
-											disabled={
-												loading || !passage.trim()
-											}
+											disabled={loading || !passage.trim()}
 											loading={loading}
-											leftSection={<Sparkles size={16} />}
 										>
-											{loading
-												? 'Processing...'
-												: 'Get Explanations'}
+											{loading ? 'Processing...' : 'Get Explanations'}
 										</Button>
 									</Flex>
 								</Stack>
@@ -297,18 +245,14 @@ export default function Home() {
 								<Flex justify="space-between" align="center">
 									<Group gap="sm">
 										<BookOpen size={20} />
-										<Title order={3}>
-											Keyword Explanations
-										</Title>
+										<Title order={3}>Article with Keyword Explanations</Title>
 									</Group>
 									{!showTip && (
 										<Button
 											variant="subtle"
 											size="sm"
 											onClick={handleShowTip}
-											leftSection={
-												<Lightbulb size={16} />
-											}
+											leftSection={<Lightbulb size={16} />}
 										>
 											Show tip
 										</Button>
@@ -318,72 +262,45 @@ export default function Home() {
 								{showTip && (
 									<Alert
 										icon={<Lightbulb size={16} />}
-										title="Tip"
-										color="blue"
-										variant="light"
 										withCloseButton
 										onClose={handleDismissTip}
 									>
-										Hover over blue highlighted terms to see
-										explanations. Click on dashed outlined
-										terms to get new explanations.
+										Hover over underlined terms to see explanations. Click on
+										words to get new explanations.
 									</Alert>
 								)}
 
 								<Stack gap="md">
 									{keywords.map((paragraph, pIdx) => (
-										<Card
-											key={pIdx}
-											withBorder
-											padding="md"
-										>
+										<Card key={pIdx} withBorder padding="md">
 											<Text
 												style={{
 													lineHeight: 1.6,
 													textAlign: 'justify',
 												}}
 											>
-												{paragraph.map(
-													(wordObj, wIdx) => {
-														const currentWord =
-															wordObj.word;
-														const nextWord =
-															wIdx <
-															paragraph.length - 1
-																? paragraph[
-																		wIdx + 1
-																	].word
-																: '';
-														const shouldAddSpace =
-															wIdx <
-																paragraph.length -
-																	1 &&
-															!/[(\[{]$/.test(
-																currentWord
-															) &&
-															!/^[.,;:!?)\]}]/.test(
-																nextWord
-															);
+												{paragraph.map((wordObj, wIdx) => {
+													const currentWord = wordObj.word;
+													const nextWord =
+														wIdx < paragraph.length - 1
+															? paragraph[wIdx + 1].word
+															: '';
+													const shouldAddSpace =
+														wIdx < paragraph.length - 1 &&
+														!/[(\[{]$/.test(currentWord) &&
+														!/^[.,;:!?)\]}]/.test(nextWord);
 
-														return (
-															<span key={wIdx}>
-																<KeywordHighlight
-																	wordObj={
-																		wordObj
-																	}
-																	loadingWord={
-																		loadingWord
-																	}
-																	onWordClick={
-																		handleWordClick
-																	}
-																/>
-																{shouldAddSpace &&
-																	' '}
-															</span>
-														);
-													}
-												)}
+													return (
+														<span key={wIdx}>
+															<KeywordHighlight
+																wordObj={wordObj}
+																loadingWord={loadingWord}
+																onWordClick={handleWordClick}
+															/>
+															{shouldAddSpace && ' '}
+														</span>
+													);
+												})}
 											</Text>
 										</Card>
 									))}
@@ -414,14 +331,9 @@ export default function Home() {
 										<Title order={3} ta="center">
 											Ready to Help You Read
 										</Title>
-										<Text
-											ta="center"
-											c="dimmed"
-											maw="400px"
-										>
-											Paste a technical article above and
-											we will identify complex terms and
-											provide explanations.
+										<Text ta="center" c="dimmed" maw="400px">
+											Paste a technical article above and we will identify
+											complex terms and provide explanations.
 										</Text>
 									</div>
 								</Stack>
@@ -432,9 +344,7 @@ export default function Home() {
 			</Container>
 
 			{/* Footer */}
-			<Box
-				style={{ borderTop: '1px solid #e5e7eb', marginTop: '3rem' }}
-			/>
+			<Box style={{ borderTop: '1px solid #e5e7eb', marginTop: '3rem' }} />
 		</Box>
 	);
 }
