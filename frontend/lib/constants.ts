@@ -20,6 +20,7 @@ export interface User {
 	username: string;
 	email: string;
 	bio?: string;
+    known_keywords?: string[];
 }
 
 export interface AuthResponse {

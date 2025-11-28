@@ -27,6 +27,7 @@ import { TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
 import { useAuth } from '@/components/AuthContext';
 import AuthPage from '@/components/AuthPage';
 import { apiClient } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 function KeywordHighlight({
 	wordObj,
@@ -78,8 +79,13 @@ function KeywordHighlight({
 
 function UserMenu() {
 	const { user, logout } = useAuth();
+	const router = useRouter();
 
 	if (!user) return null;
+
+	const handleProfileClick = () => {
+		router.push('/profile');
+	};
 
 	return (
 		<Menu shadow="md" width={200}>
@@ -91,6 +97,9 @@ function UserMenu() {
 
 			<Menu.Dropdown>
 				<Menu.Label>Welcome, {user.username}!</Menu.Label>
+				<Menu.Item leftSection={<User size={14} />} onClick={handleProfileClick}>
+					Profile
+				</Menu.Item>
 				<Menu.Item leftSection={<LogOut size={14} />} color="red" onClick={logout}>
 					Logout
 				</Menu.Item>
