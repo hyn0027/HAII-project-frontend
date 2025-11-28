@@ -104,6 +104,19 @@ export const authApi = {
 			throw new Error('Profile update failed');
 		}
 	},
+
+	async clearKeywordHistory(keywords?: string[]): Promise<{ success: boolean; message: string }> {
+		try {
+			const data = keywords ? { keywords } : { clear_all: true };
+			const response = await apiClient.post('/clear_user_keyword_history/', data);
+			return response.data;
+		} catch (error) {
+			if (axios.isAxiosError(error) && error.response) {
+				return error.response.data;
+			}
+			return { success: false, message: 'Failed to clear keyword history' };
+		}
+	},
 };
 
 // Helper function to make authenticated API calls

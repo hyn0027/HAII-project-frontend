@@ -17,6 +17,7 @@ interface AuthContextType {
 	updateProfile: (
 		data: Partial<User> & { current_password?: string; new_password?: string }
 	) => Promise<{ success: boolean; message: string }>;
+	clearKeywordHistory: (keywords?: string[]) => Promise<{ success: boolean; message: string }>;
 	refreshUser: () => Promise<void>;
 }
 
@@ -115,6 +116,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	};
 
+	const clearKeywordHistory = async (keywords?: string[]) => {
+		try {
+			const response = await authApi.clearKeywordHistory(keywords);
+			if (response.success) {
+				// Refresh user data to get updated keyword explanation pairs
+				await refreshUser();
+			}
+			return { success: response.success, message: response.message };
+		} catch {
+			return { success: false, message: 'Failed to clear keyword history' };
+		}
+	};
+
 	const refreshUser = async () => {
 		try {
 			const response = await authApi.getProfile();
@@ -133,6 +147,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		signup,
 		logout,
 		updateProfile,
+		clearKeywordHistory,
 		refreshUser,
 	};
 

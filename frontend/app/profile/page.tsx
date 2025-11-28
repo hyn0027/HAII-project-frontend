@@ -19,8 +19,10 @@ import {
 	Flex,
 	Badge,
 	Modal,
+	Card,
+	ScrollArea,
 } from '@mantine/core';
-import { Plus, Edit, Check, X } from 'lucide-react';
+import { Plus, Edit, Check, X, Trash, AlertTriangle } from 'lucide-react';
 import { useDisclosure } from '@mantine/hooks';
 
 interface ProfileFormData {
@@ -36,7 +38,7 @@ interface PasswordChangeData {
 }
 
 export default function ProfilePage() {
-	const { user, updateProfile, loading, refreshUser } = useAuth();
+	const { user, updateProfile, loading, refreshUser, clearKeywordHistory } = useAuth();
 	const router = useRouter();
 	const hasRefreshed = useRef(false);
 	const [formData, setFormData] = useState<ProfileFormData>({
@@ -53,6 +55,8 @@ export default function ProfilePage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 	const [passwordModalOpened, { open: openPasswordModal, close: closePasswordModal }] =
+		useDisclosure(false);
+	const [clearAllModalOpened, { open: openClearAllModal, close: closeClearAllModal }] =
 		useDisclosure(false);
 
 	// Redirect to login if not authenticated
@@ -179,6 +183,54 @@ export default function ProfilePage() {
 		} catch (error) {
 			console.log(error);
 			setAlert({ type: 'error', message: 'An error occurred while changing password' });
+		} finally {
+			setIsSubmitting(false);
+            refreshUser();
+		}
+	};
+
+	const handleClearAllHistory = async () => {
+		try {
+			setIsSubmitting(true);
+			setAlert(null);
+
+			const result = await clearKeywordHistory();
+
+			if (result.success) {
+				setAlert({
+					type: 'success',
+					message: 'All keyword history cleared successfully!',
+				});
+				closeClearAllModal();
+			} else {
+				setAlert({ type: 'error', message: result.message || 'Failed to clear history' });
+			}
+		} catch (error) {
+			console.log(error);
+			setAlert({ type: 'error', message: 'An error occurred while clearing history' });
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handleClearIndividualHistory = async (keyword: string) => {
+		try {
+			setIsSubmitting(true);
+			setAlert(null);
+
+			const result = await clearKeywordHistory([keyword]);
+
+			if (result.success) {
+				setAlert({
+					type: 'success',
+					message: `History for "${keyword}" cleared successfully!`,
+				});
+			} else {
+				setAlert({ type: 'error', message: result.message || 'Failed to clear history' });
+			}
+		} catch (error) {
+			console.log(error);
+			setAlert({ type: 'error', message: 'An error occurred while clearing history' });
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -316,6 +368,68 @@ export default function ProfilePage() {
 					</Stack>
 				</Paper>
 
+				{/* Keyword Explanation History Section */}
+				<Paper shadow="md" p="lg">
+					<Stack gap="md">
+						<Group justify="space-between">
+							<div>
+								<Title order={3}>Keyword Learning History</Title>
+								<Text size="sm" c="dimmed">
+									View and manage your keyword explanation history
+								</Text>
+							</div>
+							{user?.all_keyword_explanation_pairs &&
+								user.all_keyword_explanation_pairs.length > 0 && (
+									<Button
+										variant="outline"
+										color="red"
+										leftSection={<Trash size={16} />}
+										onClick={openClearAllModal}
+									>
+										Clear All History
+									</Button>
+								)}
+						</Group>
+
+						{user?.all_keyword_explanation_pairs &&
+						user.all_keyword_explanation_pairs.length > 0 ? (
+							<ScrollArea h={400}>
+								<Stack gap="sm">
+									{user.all_keyword_explanation_pairs.map((pair, index) => (
+										<Card key={index} p="md" withBorder>
+											<Group justify="space-between" align="flex-start">
+												<Box style={{ flex: 1 }}>
+													<Group gap="xs" mb="xs">
+														<Badge variant="light" color="blue">
+															{pair.keyword}
+														</Badge>
+													</Group>
+													<Text size="sm" c="dimmed">
+														{pair.explanation}
+													</Text>
+												</Box>
+												<ActionIcon
+													color="red"
+													variant="light"
+													onClick={() => handleClearIndividualHistory(pair.keyword)}
+													disabled={isSubmitting}
+												>
+													<Trash size={14} />
+												</ActionIcon>
+											</Group>
+										</Card>
+									))}
+								</Stack>
+							</ScrollArea>
+						) : (
+							<Text size="sm" c="dimmed" ta="center" py="xl">
+								No keyword explanations learned yet. Start reading passages to build your
+								vocabulary history!
+							</Text>
+						)}
+					</Stack>
+				</Paper>
+
 				<Paper shadow="md" p="lg">
 					<Stack gap="md">
 						<Group justify="space-between">
@@ -381,6 +495,39 @@ export default function ProfilePage() {
 							}
 						>
 							Change Password
+						</Button>
+					</Group>
+				</Stack>
+			</Modal>
+
+			{/* Clear All History Confirmation Modal */}
+			<Modal
+				opened={clearAllModalOpened}
+				onClose={closeClearAllModal}
+				title={
+					<Group gap="xs">
+						<AlertTriangle size={20} color="red" />
+						<Text fw={500}>Clear All Keyword History</Text>
+					</Group>
+				}
+				size="md"
+			>
+				<Stack gap="md">
+					<Text>
+						Are you sure you want to clear all your keyword learning history? This action cannot be
+						undone.
+					</Text>
+
+					<Group justify="flex-end" mt="md">
+						<Button variant="outline" onClick={closeClearAllModal}>
+							Cancel
+						</Button>
+						<Button
+							color="red"
+							onClick={handleClearAllHistory}
+							loading={isSubmitting}
+						>
+							Clear All History
 						</Button>
 					</Group>
 				</Stack>
