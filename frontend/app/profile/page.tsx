@@ -404,9 +404,14 @@ export default function ProfilePage() {
 															{pair.keyword}
 														</Badge>
 													</Group>
-													<Text size="sm" c="dimmed">
+													<Text size="sm" c="dimmed" mb="xs">
 														{pair.explanation}
 													</Text>
+													{pair.reason && (
+														<Text size="xs" c="dimmed" fs="italic">
+															Reason: {pair.reason}
+														</Text>
+													)}
 												</Box>
 												<ActionIcon
 													color="red"

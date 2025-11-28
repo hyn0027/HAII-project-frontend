@@ -20,6 +20,7 @@ export interface KeywordExplanationPair {
 	id?: number;
 	keyword: string;
 	explanation: string;
+	reason?: string;
 }
 
 export interface User {
