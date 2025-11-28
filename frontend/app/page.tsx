@@ -18,15 +18,15 @@ import {
 	Tooltip,
 	Center,
 	Box,
+	Loader,
+	Menu,
 	useMantineColorScheme,
 } from '@mantine/core';
-import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle } from 'lucide-react';
-import {
-	API_ENDPOINT_GET_KEYWORD,
-	API_ENDPOINT_NEW_KEYWORD,
-	TIP_STORAGE_KEY,
-	type Keywords,
-} from '@/lib/constants';
+import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle, User, LogOut } from 'lucide-react';
+import { TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
+import { useAuth } from '@/components/AuthContext';
+import AuthPage from '@/components/AuthPage';
+import { apiClient } from '@/lib/auth';
 
 function KeywordHighlight({
 	wordObj,
@@ -44,12 +44,13 @@ function KeywordHighlight({
 	// Words with explanations: show tooltip, not clickable
 	if (hasExplanation) {
 		return (
-			<Tooltip label={wordObj.explanation} position="top" withArrow>
+			<Tooltip inline multiline w="500" label={wordObj.explanation} position="top" withArrow>
 				<Text
 					component="span"
 					style={{
 						cursor: 'help',
 						textDecoration: 'underline',
+						fontWeight: 500,
 					}}
 				>
 					{wordObj.word}
@@ -66,11 +67,35 @@ function KeywordHighlight({
 				backgroundColor: isLoading ? '#fef3c7' : 'inherit',
 				color: isLoading ? '#92400e' : 'inherit',
 				cursor: isClickable ? 'pointer' : 'default',
+				fontWeight: 500,
 			}}
 			onClick={isClickable ? () => onWordClick(wordObj.word) : undefined}
 		>
 			{wordObj.word}
 		</Text>
+	);
+}
+
+function UserMenu() {
+	const { user, logout } = useAuth();
+
+	if (!user) return null;
+
+	return (
+		<Menu shadow="md" width={200}>
+			<Menu.Target>
+				<ActionIcon variant="subtle" aria-label="User menu">
+					<User size={18} />
+				</ActionIcon>
+			</Menu.Target>
+
+			<Menu.Dropdown>
+				<Menu.Label>Welcome, {user.username}!</Menu.Label>
+				<Menu.Item leftSection={<LogOut size={14} />} color="red" onClick={logout}>
+					Logout
+				</Menu.Item>
+			</Menu.Dropdown>
+		</Menu>
 	);
 }
 
@@ -94,6 +119,7 @@ const ClientOnlyThemeToggle = dynamic(() => Promise.resolve(ThemeToggle), {
 });
 
 export default function Home() {
+	const { user, loading: authLoading } = useAuth();
 	const [passage, setPassage] = useState('');
 	const [keywords, setKeywords] = useState<Keywords>([]);
 	const [loading, setLoading] = useState(false);
@@ -116,18 +142,38 @@ export default function Home() {
 		localStorage.removeItem(TIP_STORAGE_KEY);
 	};
 
+	// Show loading spinner while checking authentication
+	if (authLoading) {
+		return (
+			<Container size="sm" mt={50}>
+				<Center>
+					<Loader size="lg" />
+				</Center>
+			</Container>
+		);
+	}
+
+	// Show auth page if not logged in
+	if (!user) {
+		return <AuthPage />;
+	}
+
 	const handleWordClick = async (word: string) => {
 		setLoadingWord(word);
 		setError('');
 
 		try {
-			const res = await axios.post(API_ENDPOINT_NEW_KEYWORD, {
+			const response = await apiClient.post('/new_keyword/', {
 				keywords_with_explanations: keywords,
 				requested_word: word,
 			});
-			setKeywords(res.data.keywords_with_explanations);
+			setKeywords(response.data.keywords_with_explanations);
 		} catch (err) {
-			setError('Failed to fetch explanation for the selected word. Please try again.');
+			if (axios.isAxiosError(err) && err.response?.status === 401) {
+				setError('Please log in again to continue.');
+			} else {
+				setError('Failed to fetch explanation for the selected word. Please try again.');
+			}
 			console.error(err);
 		} finally {
 			setLoadingWord(null);
@@ -143,12 +189,16 @@ export default function Home() {
 		setKeywords([]);
 
 		try {
-			const res = await axios.post(API_ENDPOINT_GET_KEYWORD, { passage });
-			setKeywords(res.data.keywords_with_explanations);
+			const response = await apiClient.post('/get_keywords/', { passage });
+			setKeywords(response.data.keywords_with_explanations);
 		} catch (err) {
-			setError(
-				'Failed to fetch keyword explanations. Please check if the backend server is running.'
-			);
+			if (axios.isAxiosError(err) && err.response?.status === 401) {
+				setError('Please log in again to continue.');
+			} else {
+				setError(
+					'Failed to fetch keyword explanations. Please check if the backend server is running.'
+				);
+			}
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -179,14 +229,17 @@ export default function Home() {
 							</Box>
 							<div>
 								<Title order={2} size="h3">
-									Technical Article Reading Helper
+									Reading Helper
 								</Title>
 								<Text size="sm" c="dimmed">
-									AI-powered keyword explanations
+									Help you understand technical articles with keyword explanations
 								</Text>
 							</div>
 						</Group>
-						<ClientOnlyThemeToggle />
+						<Group>
+							<UserMenu />
+							<ClientOnlyThemeToggle />
+						</Group>
 					</Flex>
 				</Container>
 			</Box>
