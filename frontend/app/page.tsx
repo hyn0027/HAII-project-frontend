@@ -22,7 +22,8 @@ import {
 	Menu,
 	useMantineColorScheme,
 } from '@mantine/core';
-import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle, User, LogOut } from 'lucide-react';
+import { notifications } from '@mantine/notifications';
+import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle, User, LogOut, Save, History } from 'lucide-react';
 import { TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
 import { useAuth } from '@/components/AuthContext';
 import AuthPage from '@/components/AuthPage';
@@ -93,6 +94,10 @@ function UserMenu() {
 		router.push('/profile');
 	};
 
+	const handleHistoryClick = () => {
+		router.push('/history');
+	};
+
 	return (
 		<Menu shadow="md" width={200}>
 			<Menu.Target>
@@ -105,6 +110,9 @@ function UserMenu() {
 				<Menu.Label>Welcome, {user.username}!</Menu.Label>
 				<Menu.Item leftSection={<User size={14} />} onClick={handleProfileClick}>
 					Profile
+				</Menu.Item>
+				<Menu.Item leftSection={<History size={14} />} onClick={handleHistoryClick}>
+					History
 				</Menu.Item>
 				<Menu.Item leftSection={<LogOut size={14} />} color="red" onClick={logout}>
 					Logout
@@ -139,6 +147,7 @@ export default function Home() {
 	const [keywords, setKeywords] = useState<Keywords>([]);
 	const [loading, setLoading] = useState(false);
 	const [loadingWord, setLoadingWord] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState('');
 	const [showTip, setShowTip] = useState(true);
 
@@ -241,6 +250,32 @@ export default function Home() {
 		}
 	};
 
+	const handleSavePassage = async () => {
+		setSaving(true);
+		setError('');
+
+		try {
+			await apiClient.post('/save_passage/', {
+				keywords_with_explanations: keywords,
+			});
+			notifications.show({
+				title: 'Success!',
+				message: 'Passage saved successfully',
+				color: 'green',
+				icon: <Save size={16} />,
+			});
+		} catch (err) {
+			if (axios.isAxiosError(err) && err.response?.status === 401) {
+				setError('Please log in again to continue.');
+			} else {
+				setError('Failed to save passage. Please try again.');
+			}
+			console.error(err);
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	return (
 		<Box style={{ minHeight: '100vh' }}>
 			{/* Header */}
@@ -336,16 +371,28 @@ export default function Home() {
 										<BookOpen size={20} />
 										<Title order={3}>Article with Keyword Explanations</Title>
 									</Group>
-									{!showTip && (
+									<Group>
 										<Button
-											variant="subtle"
+											variant="filled"
+											color="green"
 											size="sm"
-											onClick={handleShowTip}
-											leftSection={<Lightbulb size={16} />}
+											onClick={handleSavePassage}
+											loading={saving}
+											leftSection={<Save size={16} />}
 										>
-											Show tip
+											{saving ? 'Saving...' : 'Save Passage'}
 										</Button>
-									)}
+										{!showTip && (
+											<Button
+												variant="subtle"
+												size="sm"
+												onClick={handleShowTip}
+												leftSection={<Lightbulb size={16} />}
+											>
+												Show tip
+											</Button>
+										)}
+									</Group>
 								</Flex>
 
 								{showTip && (
