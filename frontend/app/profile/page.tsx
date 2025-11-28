@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
@@ -36,8 +36,9 @@ interface PasswordChangeData {
 }
 
 export default function ProfilePage() {
-	const { user, updateProfile, loading } = useAuth();
+	const { user, updateProfile, loading, refreshUser } = useAuth();
 	const router = useRouter();
+	const hasRefreshed = useRef(false);
 	const [formData, setFormData] = useState<ProfileFormData>({
 		email: '',
 		bio: '',
@@ -51,7 +52,8 @@ export default function ProfilePage() {
 	const [newKeyword, setNewKeyword] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-	const [passwordModalOpened, { open: openPasswordModal, close: closePasswordModal }] = useDisclosure(false);
+	const [passwordModalOpened, { open: openPasswordModal, close: closePasswordModal }] =
+		useDisclosure(false);
 
 	// Redirect to login if not authenticated
 	useEffect(() => {
@@ -59,6 +61,14 @@ export default function ProfilePage() {
 			router.push('/');
 		}
 	}, [user, loading, router]);
+
+	// Refresh user data when component mounts
+	useEffect(() => {
+		if (!loading && user && !hasRefreshed.current) {
+			refreshUser();
+			hasRefreshed.current = true;
+		}
+	}, [user, loading, refreshUser]);
 
 	// Initialize form data when user data is available
 	useEffect(() => {
@@ -117,12 +127,15 @@ export default function ProfilePage() {
 			const result = await updateProfile(formData);
 
 			if (result.success) {
-				setAlert({ type: 'success', message: result.message || 'Profile updated successfully!' });
+				setAlert({
+					type: 'success',
+					message: result.message || 'Profile updated successfully!',
+				});
 			} else {
 				setAlert({ type: 'error', message: result.message || 'Failed to update profile' });
 			}
 		} catch (error) {
-            console.log(error);
+			console.log(error);
 			setAlert({ type: 'error', message: 'An error occurred while updating profile' });
 		} finally {
 			setIsSubmitting(false);
@@ -140,7 +153,10 @@ export default function ProfilePage() {
 			}
 
 			if (passwordData.new_password.length < 6) {
-				setAlert({ type: 'error', message: 'New password must be at least 6 characters long' });
+				setAlert({
+					type: 'error',
+					message: 'New password must be at least 6 characters long',
+				});
 				return;
 			}
 
@@ -161,7 +177,7 @@ export default function ProfilePage() {
 				setAlert({ type: 'error', message: result.message || 'Failed to change password' });
 			}
 		} catch (error) {
-            console.log(error);
+			console.log(error);
 			setAlert({ type: 'error', message: 'An error occurred while changing password' });
 		} finally {
 			setIsSubmitting(false);
@@ -198,7 +214,11 @@ export default function ProfilePage() {
 				</Group>
 
 				{alert && (
-					<Alert color={alert.type === 'success' ? 'green' : 'red'} onClose={() => setAlert(null)} withCloseButton>
+					<Alert
+						color={alert.type === 'success' ? 'green' : 'red'}
+						onClose={() => setAlert(null)}
+						withCloseButton
+					>
 						{alert.message}
 					</Alert>
 				)}
@@ -206,7 +226,7 @@ export default function ProfilePage() {
 				<Paper shadow="md" p="lg">
 					<Stack gap="md">
 						<Title order={3}>Profile Information</Title>
-						
+
 						<TextInput
 							label="Username"
 							value={user.username}
@@ -217,7 +237,7 @@ export default function ProfilePage() {
 						<TextInput
 							label="Email"
 							value={formData.email}
-							onChange={(e) => handleInputChange('email', e.target.value)}
+							onChange={e => handleInputChange('email', e.target.value)}
 							placeholder="Enter your email"
 							required
 						/>
@@ -225,7 +245,7 @@ export default function ProfilePage() {
 						<Textarea
 							label="Bio"
 							value={formData.bio}
-							onChange={(e) => handleInputChange('bio', e.target.value)}
+							onChange={e => handleInputChange('bio', e.target.value)}
 							placeholder="Tell us about yourself..."
 							autosize
 							minRows={3}
@@ -239,16 +259,20 @@ export default function ProfilePage() {
 							<Text size="xs" c="dimmed" mb="sm">
 								Add keywords that you do not need further explanation for.
 							</Text>
-							
+
 							<Group mb="xs">
 								<TextInput
 									placeholder="Add a keyword..."
 									value={newKeyword}
-									onChange={(e) => setNewKeyword(e.target.value)}
+									onChange={e => setNewKeyword(e.target.value)}
 									onKeyPress={handleKeywordKeyPress}
 									style={{ flex: 1 }}
 								/>
-								<ActionIcon onClick={addKeyword} variant="filled" disabled={!newKeyword.trim()}>
+								<ActionIcon
+									onClick={addKeyword}
+									variant="filled"
+									disabled={!newKeyword.trim()}
+								>
 									<Plus size={16} />
 								</ActionIcon>
 							</Group>
@@ -272,7 +296,9 @@ export default function ProfilePage() {
 									</Badge>
 								))}
 								{formData.known_keywords.length === 0 && (
-									<Text size="sm" c="dimmed">No keywords added yet</Text>
+									<Text size="sm" c="dimmed">
+										No keywords added yet
+									</Text>
 								)}
 							</Flex>
 						</Box>
@@ -310,12 +336,17 @@ export default function ProfilePage() {
 			</Stack>
 
 			{/* Password Change Modal */}
-			<Modal opened={passwordModalOpened} onClose={closePasswordModal} title="Change Password" size="md">
+			<Modal
+				opened={passwordModalOpened}
+				onClose={closePasswordModal}
+				title="Change Password"
+				size="md"
+			>
 				<Stack gap="md">
 					<PasswordInput
 						label="Current Password"
 						value={passwordData.current_password}
-						onChange={(e) => handlePasswordChange('current_password', e.target.value)}
+						onChange={e => handlePasswordChange('current_password', e.target.value)}
 						placeholder="Enter your current password"
 						required
 					/>
@@ -323,7 +354,7 @@ export default function ProfilePage() {
 					<PasswordInput
 						label="New Password"
 						value={passwordData.new_password}
-						onChange={(e) => handlePasswordChange('new_password', e.target.value)}
+						onChange={e => handlePasswordChange('new_password', e.target.value)}
 						placeholder="Enter your new password"
 						required
 					/>
@@ -331,7 +362,7 @@ export default function ProfilePage() {
 					<PasswordInput
 						label="Confirm New Password"
 						value={passwordData.confirm_password}
-						onChange={(e) => handlePasswordChange('confirm_password', e.target.value)}
+						onChange={e => handlePasswordChange('confirm_password', e.target.value)}
 						placeholder="Confirm your new password"
 						required
 					/>
@@ -343,7 +374,11 @@ export default function ProfilePage() {
 						<Button
 							onClick={handleSubmitPassword}
 							loading={isSubmitting}
-							disabled={!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password}
+							disabled={
+								!passwordData.current_password ||
+								!passwordData.new_password ||
+								!passwordData.confirm_password
+							}
 						>
 							Change Password
 						</Button>

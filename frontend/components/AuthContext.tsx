@@ -14,7 +14,10 @@ interface AuthContextType {
 		bio?: string
 	) => Promise<{ success: boolean; message: string }>;
 	logout: () => Promise<void>;
-	updateProfile: (data: Partial<User> & { current_password?: string; new_password?: string }) => Promise<{ success: boolean; message: string }>;
+	updateProfile: (
+		data: Partial<User> & { current_password?: string; new_password?: string }
+	) => Promise<{ success: boolean; message: string }>;
+	refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,7 +99,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	};
 
-	const updateProfile = async (data: Partial<User> & { current_password?: string; new_password?: string }) => {
+	const updateProfile = async (
+		data: Partial<User> & { current_password?: string; new_password?: string }
+	) => {
 		try {
 			const response = await authApi.updateProfile(data);
 			if (response.success && response.user) {
@@ -110,6 +115,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	};
 
+	const refreshUser = async () => {
+		try {
+			const response = await authApi.getProfile();
+			if (response.success && response.user) {
+				setUser(response.user);
+			}
+		} catch (error) {
+			console.log('User refresh failed:', error);
+		}
+	};
+
 	const value = {
 		user,
 		loading,
@@ -117,6 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		signup,
 		logout,
 		updateProfile,
+		refreshUser,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
