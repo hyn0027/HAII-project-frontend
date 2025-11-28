@@ -33,16 +33,18 @@ function KeywordHighlight({
 	wordObj,
 	loadingWord,
 	onWordClick,
+	onWordRightClick,
 }: {
 	wordObj: Record<string, string>;
 	loadingWord: string | null;
 	onWordClick: (word: string) => void;
+	onWordRightClick: (word: string) => void;
 }) {
 	const isLoading = loadingWord === wordObj.word;
 	const hasExplanation = !!wordObj.explanation;
 	const isClickable = !hasExplanation && !loadingWord;
 
-	// Words with explanations: show tooltip, not clickable
+	// Words with explanations: show tooltip, right-clickable
 	if (hasExplanation) {
 		return (
 			<Tooltip inline multiline w="500" label={wordObj.explanation} position="top" withArrow>
@@ -52,6 +54,10 @@ function KeywordHighlight({
 						cursor: 'help',
 						textDecoration: 'underline',
 						fontWeight: 500,
+					}}
+					onContextMenu={(e) => {
+						e.preventDefault();
+						onWordRightClick(wordObj.word);
 					}}
 				>
 					{wordObj.word}
@@ -187,6 +193,27 @@ export default function Home() {
 		} finally {
 			setLoadingWord(null);
 		}
+	};
+
+	const handleWordRightClick = async (word: string) => {
+		setError('');
+
+		try {
+			const response = await apiClient.post('/add_known_word_to_passage/', {
+				keywords_with_explanations: keywords,
+				word: word,
+			});
+			setKeywords(response.data.keywords_with_explanations);
+            console.log('Marked word as known:', word);
+		} catch (err) {
+			if (axios.isAxiosError(err) && err.response?.status === 401) {
+				setError('Please log in again to continue.');
+			} else {
+				setError('Failed to mark word as known. Please try again.');
+			}
+			console.error(err);
+		}
+
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -328,7 +355,7 @@ export default function Home() {
 										onClose={handleDismissTip}
 									>
 										Hover over underlined terms to see explanations. Click on
-										words to get new explanations.
+										words to get new explanations. Right-click on explained words to mark them as known.
 									</Alert>
 								)}
 
@@ -358,6 +385,7 @@ export default function Home() {
 																wordObj={wordObj}
 																loadingWord={loadingWord}
 																onWordClick={handleWordClick}
+																onWordRightClick={handleWordRightClick}
 															/>
 															{shouldAddSpace && ' '}
 														</span>
