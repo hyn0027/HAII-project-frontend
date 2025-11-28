@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = 'http://127.0.0.1:8000/api';
+export const API_BASE_URL = 'http://localhost:8000/api';
 export const API_ENDPOINT_GET_KEYWORD = `${API_BASE_URL}/get_keywords/`;
 export const API_ENDPOINT_NEW_KEYWORD = `${API_BASE_URL}/new_keyword/`;
 export const API_ENDPOINT_LOGIN = `${API_BASE_URL}/login/`;
