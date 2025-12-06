@@ -23,7 +23,18 @@ import {
 	useMantineColorScheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { BookOpen, Newspaper, Lightbulb, Sun, Moon, AlertCircle, User, LogOut, Save, History } from 'lucide-react';
+import {
+	BookOpen,
+	Newspaper,
+	Lightbulb,
+	Sun,
+	Moon,
+	AlertCircle,
+	User,
+	LogOut,
+	Save,
+	History,
+} from 'lucide-react';
 import { TIP_STORAGE_KEY, type Keywords } from '@/lib/constants';
 import { useAuth } from '@/components/AuthContext';
 import AuthPage from '@/components/AuthPage';
@@ -56,7 +67,7 @@ function KeywordHighlight({
 						textDecoration: 'underline',
 						fontWeight: 500,
 					}}
-					onContextMenu={(e) => {
+					onContextMenu={e => {
 						e.preventDefault();
 						onWordRightClick(wordObj.word);
 					}}
@@ -213,7 +224,7 @@ export default function Home() {
 				word: word,
 			});
 			setKeywords(response.data.keywords_with_explanations);
-            console.log('Marked word as known:', word);
+			console.log('Marked word as known:', word);
 		} catch (err) {
 			if (axios.isAxiosError(err) && err.response?.status === 401) {
 				setError('Please log in again to continue.');
@@ -222,7 +233,6 @@ export default function Home() {
 			}
 			console.error(err);
 		}
-
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -402,7 +412,8 @@ export default function Home() {
 										onClose={handleDismissTip}
 									>
 										Hover over underlined terms to see explanations. Click on
-										words to get new explanations. Right-click on explained words to mark them as known.
+										words to get new explanations. Right-click on explained
+										words to mark them as known.
 									</Alert>
 								)}
 
@@ -432,7 +443,9 @@ export default function Home() {
 																wordObj={wordObj}
 																loadingWord={loadingWord}
 																onWordClick={handleWordClick}
-																onWordRightClick={handleWordRightClick}
+																onWordRightClick={
+																	handleWordRightClick
+																}
 															/>
 															{shouldAddSpace && ' '}
 														</span>

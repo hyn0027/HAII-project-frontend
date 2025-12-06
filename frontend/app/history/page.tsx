@@ -21,22 +21,26 @@ import {
 	useMantineColorScheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { BookOpen, History, Sun, Moon, AlertCircle, User, LogOut, ArrowLeft, Trash2 } from 'lucide-react';
+import {
+	BookOpen,
+	History,
+	Sun,
+	Moon,
+	AlertCircle,
+	User,
+	LogOut,
+	ArrowLeft,
+	Trash2,
+} from 'lucide-react';
 import { type Keywords } from '@/lib/constants';
 import { useAuth } from '@/components/AuthContext';
 import AuthPage from '@/components/AuthPage';
 import { apiClient } from '@/lib/auth';
 import dynamic from 'next/dynamic';
 
-// Reuse the KeywordHighlight component from the main page
-function KeywordHighlight({
-	wordObj,
-}: {
-	wordObj: Record<string, string>;
-}) {
+function KeywordHighlight({ wordObj }: { wordObj: Record<string, string> }) {
 	const hasExplanation = !!wordObj.explanation;
 
-	// Words with explanations: show tooltip
 	if (hasExplanation) {
 		return (
 			<Tooltip inline multiline w="500" label={wordObj.explanation} position="top" withArrow>
@@ -54,7 +58,6 @@ function KeywordHighlight({
 		);
 	}
 
-	// Words without explanations: just display normally
 	return (
 		<Text
 			component="span"
@@ -171,10 +174,9 @@ export default function HistoryPage() {
 			await apiClient.post('/delete_saved_passage/', {
 				passage_id: passageId,
 			});
-			
-			// Remove the deleted passage from the list
+
 			setPassages(passages.filter(passage => passage.id !== passageId));
-			
+
 			notifications.show({
 				title: 'Success!',
 				message: 'Passage deleted successfully',
@@ -192,7 +194,6 @@ export default function HistoryPage() {
 		}
 	};
 
-	// Show loading spinner while checking authentication
 	if (authLoading) {
 		return (
 			<Container size="sm" mt={50}>
@@ -203,7 +204,6 @@ export default function HistoryPage() {
 		);
 	}
 
-	// Show auth page if not logged in
 	if (!user) {
 		return <AuthPage />;
 	}
@@ -249,18 +249,16 @@ export default function HistoryPage() {
 
 			<Container size="xl" py="xl">
 				<Stack gap="xl">
-					{/* Back Button */}
 					<Group>
 						<Button
 							variant="subtle"
 							leftSection={<ArrowLeft size={16} />}
 							onClick={() => router.push('/')}
 						>
-							Back to Reader
+							Back to Main Page
 						</Button>
 					</Group>
 
-					{/* Error Message */}
 					{error && (
 						<Alert
 							icon={<AlertCircle size={16} />}
@@ -272,7 +270,6 @@ export default function HistoryPage() {
 						</Alert>
 					)}
 
-					{/* Loading State */}
 					{loading && (
 						<Center>
 							<Loader size="lg" />
@@ -283,7 +280,7 @@ export default function HistoryPage() {
 					{!loading && passages.length > 0 && (
 						<Stack gap="lg">
 							<Title order={3}>Your Saved Passages ({passages.length})</Title>
-							{passages.map((passage) => (
+							{passages.map(passage => (
 								<Card key={passage.id} shadow="sm" padding="lg" withBorder>
 									<Stack gap="md">
 										<Flex justify="space-between" align="center">
@@ -305,35 +302,44 @@ export default function HistoryPage() {
 										</Flex>
 
 										<Stack gap="md">
-											{passage.split_result_with_explanations.map((paragraph, pIdx) => (
-												<Card key={pIdx} withBorder padding="md" bg="gray.0">
-													<Text
-														style={{
-															lineHeight: 1.6,
-															textAlign: 'justify',
-														}}
+											{passage.split_result_with_explanations.map(
+												(paragraph, pIdx) => (
+													<Card
+														key={pIdx}
+														withBorder
+														padding="md"
+														bg="gray.0"
 													>
-														{paragraph.map((wordObj, wIdx) => {
-															const currentWord = wordObj.word;
-															const nextWord =
-																wIdx < paragraph.length - 1
-																	? paragraph[wIdx + 1].word
-																	: '';
-															const shouldAddSpace =
-																wIdx < paragraph.length - 1 &&
-																!/[(\[{]$/.test(currentWord) &&
-																!/^[.,;:!?)\]}]/.test(nextWord);
+														<Text
+															style={{
+																lineHeight: 1.6,
+																textAlign: 'justify',
+															}}
+														>
+															{paragraph.map((wordObj, wIdx) => {
+																const currentWord = wordObj.word;
+																const nextWord =
+																	wIdx < paragraph.length - 1
+																		? paragraph[wIdx + 1].word
+																		: '';
+																const shouldAddSpace =
+																	wIdx < paragraph.length - 1 &&
+																	!/[(\[{]$/.test(currentWord) &&
+																	!/^[.,;:!?)\]}]/.test(nextWord);
 
-															return (
-																<span key={wIdx}>
-																	<KeywordHighlight wordObj={wordObj} />
-																	{shouldAddSpace && ' '}
-																</span>
-															);
-														})}
-													</Text>
-												</Card>
-											))}
+																return (
+																	<span key={wIdx}>
+																		<KeywordHighlight
+																			wordObj={wordObj}
+																		/>
+																		{shouldAddSpace && ' '}
+																	</span>
+																);
+															})}
+														</Text>
+													</Card>
+												)
+											)}
 										</Stack>
 									</Stack>
 								</Card>
@@ -364,12 +370,11 @@ export default function HistoryPage() {
 											No Saved Passages Yet
 										</Title>
 										<Text ta="center" c="dimmed" maw="400px">
-											Start reading articles and save passages with explanations to see them here.
+											Start reading articles and save passages with
+											explanations to see them here.
 										</Text>
 									</div>
-									<Button onClick={() => router.push('/')}>
-										Start Reading
-									</Button>
+									<Button onClick={() => router.push('/')}>Start Reading</Button>
 								</Stack>
 							</Center>
 						</Card>
